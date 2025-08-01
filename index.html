@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prompt Engineering Library - Copy Prompts</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            color: white;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        .search-container {
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .search-input {
+            width: 100%;
+            max-width: 500px;
+            padding: 15px 20px;
+            font-size: 16px;
+            border: none;
+            border-radius: 25px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            outline: none;
+            transition: box-shadow 0.3s ease;
+        }
+
+        .search-input:focus {
+            box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+        }
+
+        .prompts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 25px;
+            margin-bottom: 40px;
+        }
+
+        .prompt-card {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            overflow: hidden;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .prompt-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.15);
+        }
+
+        .prompt-header {
+            padding: 20px;
+            background: linear-gradient(135deg, #6c5ce7 0%, #a29bfe 100%);
+            color: white;
+        }
+
+        .prompt-title {
+            font-size: 1.4rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .prompt-description {
+            opacity: 0.9;
+            font-size: 0.95rem;
+        }
+
+        .prompt-tags {
+            margin-top: 10px;
+        }
+
+        .tag {
+            display: inline-block;
+            background: rgba(255,255,255,0.2);
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            margin-right: 5px;
+            margin-top: 5px;
+        }
+
+        .prompt-content {
+            padding: 20px;
+        }
+
+        .prompt-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        .prompt-text {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 0.9rem;
+            line-height: 1.5;
+            border-left: 4px solid #6c5ce7;
+            max-height: 200px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+
+        .copy-button {
+            background: linear-gradient(135deg, #00b894 0%, #00cec9 100%);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 0.95rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            width: 100%;
+        }
+
+        .copy-button:hover {
+            background: linear-gradient(135deg, #00a085 0%, #00b5b8 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,184,148,0.3);
+        }
+
+        .copy-button.copied {
+            background: linear-gradient(135deg, #e17055 0%, #fdcb6e 100%);
+            transform: scale(0.95);
+        }
+
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #00b894;
+            color: white;
+            padding: 15px 25px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            z-index: 1000;
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+        }
+
+        .toast.show {
+            transform: translateX(0);
+        }
+
+        .loading {
+            text-align: center;
+            color: white;
+            font-size: 1.2rem;
+            margin-top: 50px;
+        }
+
+        .error {
+            text-align: center;
+            color: #e74c3c;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .prompts-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .container {
+                padding: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 Prompt Engineering Library</h1>
+            <p>Copy and use professional AI prompts for your projects</p>
+        </div>
+
+        <div class="search-container">
+            <input type="text" class="search-input" placeholder="Search prompts by name, description, or tags..." id="searchInput">
+        </div>
+
+        <div id="promptsContainer" class="prompts-grid">
+            <div class="loading">Loading prompts...</div>
+        </div>
+    </div>
+
+    <div id="toast" class="toast"></div>
+
+    <script>
+        // Simulated prompt data - in a real implementation, this would be loaded from the YAML files
+        const prompts = [
+            {
+                name: "Bug Fighter",
+                description: "Review the code to fix logical bugs in the code.",
+                tags: ["coding", "bug-fixing"],
+                category: "coding",
+                authors: ["raycast"],
+                model: "anthropic/claude-3.7-sonnet",
+                content: `Act as a software engineer with deep understanding of any programming language. Review the code to fix logical bugs in the code. Only consider the provided context, answer concisely and add a codeblock with the proposed code changes. If you can't confidently find bugs, answer with "Nothing found - LGTM 👍".
+
+Code:
+
+\`\`\`
+{{input}}
+\`\`\`
+
+Review:`
+            },
+            {
+                name: "Code Explainer",
+                description: "Explain how the code works step by step.",
+                tags: ["coding"],
+                category: "coding",
+                authors: ["raycast"],
+                model: "anthropic/claude-3.7-sonnet",
+                content: `Act as a software engineer with deep understanding of any programming language and it's documentation. Explain how the code works step by step in a list. Be concise with a casual tone of voice and write it as documentation for others.
+
+Code:
+
+\`\`\`
+{{input}}
+\`\`\`
+
+Explanation:`
+            },
+            {
+                name: "Data Organizer",
+                description: "Convert unstructured data into organized formats.",
+                tags: ["data", "organization"],
+                category: "productivity",
+                authors: ["raycast"],
+                model: "anthropic/claude-3.7-sonnet",
+                content: `Convert the following unstructured data into a well-organized format (JSON, CSV, or table as appropriate). Identify patterns, relationships, and structure the data logically.
+
+Data:
+
+{{input}}
+
+Organized format:`
+            },
+            {
+                name: "Debug Marker",
+                description: "Add helpful debug statements to code.",
+                tags: ["coding", "debugging"],
+                category: "coding",
+                authors: ["raycast"],
+                model: "anthropic/claude-3.7-sonnet",
+                content: `Add helpful debug statements to the following code to help identify potential issues or track execution flow. Use appropriate logging methods for the programming language.
+
+Code:
+
+\`\`\`
+{{input}}
+\`\`\`
+
+Code with debug statements:`
+            },
+            {
+                name: "Git Gud",
+                description: "Generate helpful git commands for common scenarios.",
+                tags: ["git", "version-control"],
+                category: "development",
+                authors: ["raycast"],
+                model: "anthropic/claude-3.7-sonnet",
+                content: `Provide the most appropriate git command(s) for the following scenario. Include explanations for what each command does.
+
+Scenario: {{input}}
+
+Git commands:`
+            },
+            {
+                name: "Grammarly",
+                description: "Improve grammar and writing style.",
+                tags: ["writing", "grammar"],
+                category: "writing",
+                authors: ["raycast"],
+                model: "anthropic/claude-3.7-sonnet",
+                content: `Improve the grammar, clarity, and style of the following text while maintaining its original meaning and tone.
+
+Original text:
+
+{{input}}
+
+Improved text:`
+            },
+            {
+                name: "PII Purifier",
+                description: "Remove or anonymize personally identifiable information.",
+                tags: ["privacy", "data-cleaning"],
+                category: "data",
+                authors: ["raycast"],
+                model: "anthropic/claude-3.7-sonnet",
+                content: `Remove or anonymize all personally identifiable information (PII) from the following text. Replace names, emails, phone numbers, addresses, and other sensitive data with placeholder values.
+
+Text with PII:
+
+{{input}}
+
+Cleaned text:`
+            },
+            {
+                name: "Regex Generator",
+                description: "Generate a regex that matches specific patterns in the text.",
+                tags: ["coding", "regex"],
+                category: "coding",
+                authors: ["raycast"],
+                model: "anthropic/claude-3.7-sonnet",
+                content: `Generate a regular expression that match the specific patterns in the text. Return the regular expression in a format that can be easily copied and pasted into a regex-enabled text editor or programming language. Then, give clear and understandable explanations on what the regex is doing and how it is constructed.
+
+Text: {{input}}
+
+Regex:`
+            },
+            {
+                name: "SQL Sorcerer",
+                description: "Transform everyday language into SQL queries.",
+                tags: ["coding", "sql"],
+                category: "coding",
+                authors: ["anthropic"],
+                model: "anthropic/claude-3.7-sonnet",
+                content: `Transform the following natural language requests into valid SQL queries for the target database: {{target_database}}. Assume a database with the following tables and columns exists:
+
+{{schema}}
+
+Provide the SQL query that would retrieve the data based on the natural language request. Do not reply with anything else other than SQL, but do wrap the query in backticks (\`\`\`sql ... \`\`\`).
+
+Request: {{input}}`
+            },
+            {
+                name: "Tech Stack Inspector",
+                description: "Analyze and explain technology stacks from code or descriptions.",
+                tags: ["technology", "analysis"],
+                category: "development",
+                authors: ["raycast"],
+                model: "anthropic/claude-3.7-sonnet",
+                content: `Analyze the following code or project description and identify the technology stack being used. Provide insights about the technologies, their purposes, and how they work together.
+
+Code/Description:
+
+{{input}}
+
+Technology stack analysis:`
+            }
+        ];
+
+        let filteredPrompts = [...prompts];
+
+        function renderPrompts() {
+            const container = document.getElementById('promptsContainer');
+            
+            if (filteredPrompts.length === 0) {
+                container.innerHTML = '<div class="error">No prompts found matching your search.</div>';
+                return;
+            }
+
+            container.innerHTML = filteredPrompts.map(prompt => `
+                <div class="prompt-card">
+                    <div class="prompt-header">
+                        <div class="prompt-title">${prompt.name}</div>
+                        <div class="prompt-description">${prompt.description}</div>
+                        <div class="prompt-tags">
+                            ${prompt.tags.map(tag => `<span class="tag">${tag}</span>`).join('')}
+                        </div>
+                    </div>
+                    <div class="prompt-content">
+                        <div class="prompt-meta">
+                            <span>📁 ${prompt.category}</span>
+                            <span>🤖 ${prompt.model.split('/').pop()}</span>
+                        </div>
+                        <div class="prompt-text">${prompt.content}</div>
+                        <button class="copy-button" data-prompt="${prompt.content.replace(/"/g, '&quot;')}">
+                            📋 Copy Prompt
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+            
+            // Setup copy button event listeners
+            setupCopyButtons();
+        }
+
+        function copyPrompt(button, encodedContent) {
+            const content = decodeURIComponent(encodedContent);
+            navigator.clipboard.writeText(content).then(() => {
+                // Visual feedback
+                const originalText = button.innerHTML;
+                button.innerHTML = '✅ Copied!';
+                button.classList.add('copied');
+                
+                // Show toast
+                showToast('Prompt copied to clipboard!');
+                
+                // Reset button after 2 seconds
+                setTimeout(() => {
+                    button.innerHTML = originalText;
+                    button.classList.remove('copied');
+                }, 2000);
+            }).catch(err => {
+                console.error('Failed to copy: ', err);
+                showToast('Failed to copy prompt', 'error');
+            });
+        }
+
+        function setupCopyButtons() {
+            document.querySelectorAll('.copy-button').forEach(button => {
+                button.addEventListener('click', function() {
+                    const content = this.getAttribute('data-prompt');
+                    navigator.clipboard.writeText(content).then(() => {
+                        // Visual feedback
+                        const originalText = this.innerHTML;
+                        this.innerHTML = '✅ Copied!';
+                        this.classList.add('copied');
+                        
+                        // Show toast
+                        showToast('Prompt copied to clipboard!');
+                        
+                        // Reset button after 2 seconds
+                        setTimeout(() => {
+                            this.innerHTML = originalText;
+                            this.classList.remove('copied');
+                        }, 2000);
+                    }).catch(err => {
+                        console.error('Failed to copy: ', err);
+                        showToast('Failed to copy prompt', 'error');
+                    });
+                });
+            });
+        }
+
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.style.background = type === 'error' ? '#e74c3c' : '#00b894';
+            toast.classList.add('show');
+            
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+
+        function filterPrompts(searchTerm) {
+            if (!searchTerm) {
+                filteredPrompts = [...prompts];
+            } else {
+                const term = searchTerm.toLowerCase();
+                filteredPrompts = prompts.filter(prompt => 
+                    prompt.name.toLowerCase().includes(term) ||
+                    prompt.description.toLowerCase().includes(term) ||
+                    prompt.tags.some(tag => tag.toLowerCase().includes(term)) ||
+                    prompt.category.toLowerCase().includes(term)
+                );
+            }
+            renderPrompts();
+        }
+
+        // Search functionality
+        document.getElementById('searchInput').addEventListener('input', (e) => {
+            filterPrompts(e.target.value);
+        });
+
+        // Initialize the app
+        document.addEventListener('DOMContentLoaded', () => {
+            // Simulate loading delay
+            setTimeout(() => {
+                renderPrompts();
+            }, 500);
+        });
+    </script>
+</body>
+</html>
