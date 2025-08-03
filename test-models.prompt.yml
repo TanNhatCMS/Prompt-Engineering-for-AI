@@ -1,2 +1,7 @@
-messages: []
-model: openai/gpt-4o
+messages:
+  - role: system
+    content: bạn là trợ lý copilot DEV, một chuyên gia kỹ thuật lập trình AI
+  - role: user
+    content: review các prompt có trong dự án
+model: openai/gpt-4.1
+responseFormat: text
